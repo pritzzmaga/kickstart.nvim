@@ -90,6 +90,7 @@ P.S. You can delete this when you're done too. It's your config now! :)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 vim.keymap.set('n', '<leader>cd', vim.cmd.Ex)
+vim.g.tmux_navigator_disable_when_zoomed = 1
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
@@ -476,6 +477,7 @@ require('lazy').setup({
       },
     },
   },
+  -- need lazy.nvim
   {
     -- Main LSP Configuration
     'neovim/nvim-lspconfig',
@@ -674,8 +676,8 @@ require('lazy').setup({
       local servers = {
         -- clangd = {},
         -- gopls = {},
-        pyright = {},
         -- rust_analyzer = {},
+        pyright = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -754,7 +756,7 @@ require('lazy').setup({
     opts = {
       notify_on_error = false,
       format_on_save = function(bufnr)
-        -- Disable "format_on_save lsp_fallback" for languages that don't
+        -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.
         local disable_filetypes = { c = true, cpp = true }
@@ -807,13 +809,33 @@ require('lazy').setup({
           --   end,
           -- },
         },
-        opts = {},
       },
       'folke/lazydev.nvim',
     },
     --- @module 'blink.cmp'
     --- @type blink.cmp.Config
     opts = {
+      completion = {
+        -- other blink.cmp settings like sources, keymap, etc.
+        menu = {
+          draw = {
+            columns = {
+              { 'kind_icon', 'label', 'label_description', 'source_name', gap = 1 },
+            },
+            components = {
+              label_description = {
+                width = { max = 50 },
+              },
+              source_name = {
+                text = function(ctx)
+                  return '[' .. ctx.source_name .. ']'
+                end,
+              },
+            },
+          },
+        },
+      },
+
       keymap = {
         -- 'default' (recommended) for mappings similar to built-in completions
         --   <c-y> to accept ([y]es) the completion.
@@ -846,12 +868,6 @@ require('lazy').setup({
         -- 'mono' (default) for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
         -- Adjusts spacing to ensure icons are aligned
         nerd_font_variant = 'mono',
-      },
-
-      completion = {
-        -- By default, you may press `<c-space>` to show the documentation.
-        -- Optionally, set `auto_show = true` to show the documentation after a delay.
-        documentation = { auto_show = false, auto_show_delay_ms = 500 },
       },
 
       sources = {
@@ -942,13 +958,31 @@ require('lazy').setup({
   { -- Git plugin
     'tpope/vim-fugitive',
   },
+  {
+    'christoomey/vim-tmux-navigator',
+    cmd = {
+      'TmuxNavigateLeft',
+      'TmuxNavigateDown',
+      'TmuxNavigateUp',
+      'TmuxNavigateRight',
+      'TmuxNavigatePrevious',
+      'TmuxNavigatorProcessList',
+    },
+    keys = {
+      { '<c-h>', '<cmd><C-U>TmuxNavigateLeft<cr>' },
+      { '<c-j>', '<cmd><C-U>TmuxNavigateDown<cr>' },
+      { '<c-k>', '<cmd><C-U>TmuxNavigateUp<cr>' },
+      { '<c-l>', '<cmd><C-U>TmuxNavigateRight<cr>' },
+      { '<c-\\>', '<cmd><C-U>TmuxNavigatePrevious<cr>' },
+    },
+  },
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'tsx' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -966,6 +1000,24 @@ require('lazy').setup({
     --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
+  },
+  {
+    'windwp/nvim-ts-autotag',
+    after = 'nvim-treesitter',
+    opts = {
+      -- Defaults
+      enable_close = true, -- Auto close tags
+      enable_rename = true, -- Auto rename pairs of tags
+      enable_close_on_slash = false, -- Auto close on trailing </
+    },
+    -- Also override individual filetype configs, these take priority.
+    -- Empty by default, useful if one of the "opts" global settings
+    -- doesn't work well in a specific filetype
+    per_filetype = {
+      ['html'] = {
+        enable_close = false,
+      },
+    },
   },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
